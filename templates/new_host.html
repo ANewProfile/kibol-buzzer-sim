@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Host Screen</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Host Control</h1>
+  <h2 id="buzzstatus">No buzz yet</h2>
+  <button onclick="reset()">Reset Buzzers</button>
+
+  <h3>Players:</h3>
+  <ul id="players"></ul>
+
+  <hr>
+  <h2>Tossup</h2>
+  <div id="tossup">Press "Next Tossup" to load</div>
+  
+  <label for="difficulties">Difficulties (comma-separated):</label>
+  <input id="difficulties" type="text" value="2,3,4,5">
+  <button onclick="nextTossup()">Next Tossup</button>
+
+  <script>
+    const socket = io();
+
+    socket.on('player_list', (players) => {
+      const list = document.getElementById('players');
+      list.innerHTML = '';
+      players.forEach(p => {
+        const li = document.createElement('li');
+        li.innerText = p;
+        list.appendChild(li);
+      });
+    });
+
+    socket.on('buzzed', (username) => {
+      document.getElementById('buzzstatus').innerText = username + " buzzed first!";
+    });
+
+    socket.on('reset', () => {
+      document.getElementById('buzzstatus').innerText = "No buzz yet";
+    });
+
+    function reset() {
+      socket.emit('reset');
+    }
+
+
+    async function nextTossup() {
+        try {
+            const diffInput = document.getElementById('difficulties').value.trim();
+            const diffs = diffInput ? diffInput : "2,3,4,5";
+            const res = await fetch(`/api/tossup?difficulties=${diffs}`);
+            const data = await res.json();
+
+            if (data && data.tossups && data.tossups.length > 0) {
+                const t = data.tossups[0];
+                document.getElementById('tossup').innerHTML = `
+                    <p><strong>Question:</strong> ${t.question}</p>
+                    <p><strong>Answer:</strong> ${t.answer}</p>
+                    `;
+            } else {
+                document.getElementById('tossup').innerText = "No tossup returned.";
+            }
+        } catch (err) {
+            document.getElementById('tossup').innerText = "Error fetching tossup.";
+            console.error(err);
+        }
+    }
+  </script>
+</body>
+</html>

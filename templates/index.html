@@ -1,14 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Buzzer</title>
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+  <title>Quiz Bowl Buzzer</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Quiz Bowl Buzzer</h1>
-    <button id="buzz-button">Buzz!</button>
-    <p id="status-text">Waiting...</p>
+  <h1>Quiz Bowl Buzzer</h1>
+  <div id="login">
+    <input id="username" placeholder="Enter username">
+    <button onclick="join()">Join</button>
+  </div>
+
+  <div id="game" style="display:none;">
+    <h2 id="status">Waiting...</h2>
+    <button id="buzz" onclick="buzz()" style="font-size:40px;">BUZZ!</button>
+  </div>
+
+  <script>
+    const socket = io();
+
+    function join() {
+      const username = document.getElementById('username').value;
+      if (!username) return;
+      socket.emit('join', {username});
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+    }
+
+    function buzz() {
+      socket.emit('buzz');
+    }
+
+    socket.on('buzzed', (username) => {
+      document.getElementById('status').innerText = username + " buzzed first!";
+    });
+
+    socket.on('reset', () => {
+      document.getElementById('status').innerText = "Waiting...";
+    });
+  </script>
 </body>
 </html>
